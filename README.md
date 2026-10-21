@@ -18,7 +18,7 @@
 
 ### 第一次安裝
 
-1. **安裝 Xcode**：在 Mac 的 App Store 搜尋「Xcode」並安裝（免費，檔案很大，要等一段時間）。第一次打開時，如果問要不要安裝 iOS 元件，選安裝。
+1. **安裝 Xcode**：在 Mac 的 App Store 搜尋「Xcode」並安裝（免費，檔案很大，要等一段時間）。已經裝過的話請更新到最新版，舊版 Xcode 可能不支援你 iPhone 的 iOS 版本。第一次打開時，如果問要不要安裝 iOS 元件，選安裝。
 2. **下載專案**：在這個 GitHub 頁面點綠色的 **Code** → **Download ZIP**，解壓縮。
 3. **打開專案**：進到解壓後的 `ios` 資料夾，雙擊 `WorkoutTimer.xcodeproj`。
 4. **登入 Apple ID**：Xcode 選單 **Xcode → Settings → Accounts**，按左下角「+」→ Apple ID，登入你平常用的 Apple ID。
