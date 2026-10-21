@@ -48,7 +48,8 @@ jobs:
             echo "Project unchanged"
           else
             git commit -m "Update generated Xcode project"
-            git push
+            git pull --rebase origin main
+            git push origin HEAD:main
           fi
 
       - name: Publish build report
