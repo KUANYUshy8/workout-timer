@@ -1,0 +1,77 @@
+name: iOS build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Build for iPhone (unsigned check)
+        id: build
+        continue-on-error: true
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild -project WorkoutTimer.xcodeproj -scheme WorkoutTimer \
+            -configuration Debug -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO build > build.log 2>&1
+
+      - name: Save generated Xcode project
+        if: steps.build.outcome == 'success'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ios/WorkoutTimer.xcodeproj ios/WorkoutTimer/Info.plist
+          if git diff --cached --quiet; then
+            echo "Project unchanged"
+          else
+            git commit -m "Update generated Xcode project"
+            git push
+          fi
+
+      - name: Publish build report
+        if: always()
+        run: |
+          {
+            echo "status: ${{ steps.build.outcome }}"
+            echo "commit: ${{ github.sha }}"
+            xcodebuild -version | head -1
+            echo "--- errors ---"
+            grep -E "error:" ios/build.log | sort -u | head -200 || true
+            echo "--- warnings ---"
+            grep -E "warning:" ios/build.log | sort -u | head -80 || true
+            echo "--- tail ---"
+            tail -60 ios/build.log || true
+          } > "$RUNNER_TEMP/REPORT.txt"
+          mkdir -p "$RUNNER_TEMP/report" && cd "$RUNNER_TEMP/report"
+          git init -q
+          cp ../REPORT.txt .
+          git add REPORT.txt
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Build report for ${{ github.sha }}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" HEAD:ci-report
+
+      - name: Fail if the build failed
+        if: steps.build.outcome != 'success'
+        run: exit 1
